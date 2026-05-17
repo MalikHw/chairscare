@@ -17,9 +17,6 @@
         "community": "https://discord.gg/G9bZ92eg2n"
     },
     "resources": {
-        "sprites": [
-            "resources/*.png"
-        ],
         "files": [
             "resources/scare.mp3"
         ]
@@ -27,7 +24,7 @@
     "settings": {
         "enabled": {
             "name": "Enabled",
-            "description": "Turn the mod on or off.",
+            "description": "Turn the mod on or off",
             "type": "bool",
             "default": true
         },
@@ -44,7 +41,7 @@
         },
         "click-chance": {
             "name": "Click Chance (%)",
-            "description": "Percentage chance the scare fires on each jump press. Only used in click mode.",
+            "description": "Percentage chance the scare fires on each jump press. Only used in click mode",
             "type": "float",
             "default": 25,
             "min": 0,
@@ -56,7 +53,7 @@
         },
         "interval-min": {
             "name": "Random Interval: Minimum (secs)",
-            "description": "Shortest possible time between scares. Only used in timer mode.",
+            "description": "Shortest possible time between scares. Only used in timer mode",
             "type": "float",
             "default": 5,
             "min": 1,
@@ -64,11 +61,20 @@
         },
         "interval-max": {
             "name": "Random Interval: Maximum (secs)",
-            "description": "Longest possible time between scares. Only used in timer mode.",
+            "description": "Longest possible time between scares. Only used in timer mode",
             "type": "float",
             "default": 30,
             "min": 1,
             "max": 600
+        },
+        "submit-title": {
+            "type": "title",
+            "name": "Community"
+        },
+        "submit-chair": {
+            "type": "custom:submit-chair",
+            "name": "Submit Chair",
+            "description": "Got a chair pic? Submit it here and it might appear in a future update!"
         }
     }
 }
