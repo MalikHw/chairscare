@@ -40,13 +40,12 @@ static void triggerScare() {
     s_scareSprite->setOpacity(255);
     scene->addChild(s_scareSprite, 100);
     FMODAudioEngine::sharedEngine()->playEffect("scare.mp3"_spr);
-    s_scareSprite->runAction(CCFadeOut::create(1.0f));
-    scene->scheduleOnce([](float) {
-        if (s_scareSprite) {
-            s_scareSprite->removeFromParent();
-            s_scareSprite = nullptr;
-        }
-    }, 1.0f, "chairscare-remove");
+    // fade out then self-remove; s_scareSprite is nulled at top of next triggerScare call
+    s_scareSprite->runAction(CCSequence::create(
+        CCFadeOut::create(1.0f),
+        CCRemoveSelf::create(true),
+        nullptr
+    ));
 }
 static bool rollChance(double percent) {
     float roll = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 100.f;
