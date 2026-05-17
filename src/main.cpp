@@ -32,7 +32,7 @@ static void loadScareImages() {
     if (!std::filesystem::exists(dir)) return;
     for (auto& entry : std::filesystem::directory_iterator(dir)) {
         auto ext = entry.path().extension().string();
-        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" || ext == ".bmp")
+        if (ext == ".png")
             s_scareImages.push_back(entry.path().string());
     }
 }
@@ -168,7 +168,7 @@ static void checkForChairUpdate() {
     );
 }
 
-// custom "Submit Chair" button setting
+// custom "Submit Chair" button setting, just opens a google form
 class SubmitChairSettingV3 : public SettingV3 {
 public:
     static Result<std::shared_ptr<SettingV3>> parse(
@@ -192,9 +192,8 @@ public:
 
 class SubmitChairSettingNodeV3 : public SettingNodeV3 {
 protected:
-    ButtonSprite*                       m_buttonSprite;
-    CCMenuItemSpriteExtra*              m_button;
-    async::TaskHolder<web::WebResponse> m_uploadTask;
+    ButtonSprite*          m_buttonSprite;
+    CCMenuItemSpriteExtra* m_button;
 
     bool init(std::shared_ptr<SubmitChairSettingV3> setting, float width) {
         if (!SettingNodeV3::init(setting, width)) return false;
@@ -222,74 +221,7 @@ protected:
     }
 
     void onSubmit(CCObject*) {
-        async::spawn(
-            file::pick(file::PickMode::OpenFile, {
-                "Pick a chair image",
-                {},
-                { { "Images", { "png", "jpg", "jpeg", "webp", "bmp" } } }
-            }),
-            [this](Result<std::optional<std::filesystem::path>> result) {
-                if (!result.isOk()) {
-                    FLAlertLayer::create("Error", "Failed to open file picker.", "OK")->show();
-                    return;
-                }
-                auto opt = result.unwrap();
-                if (!opt) return; // user cancelled
-                this->uploadFile(opt.value());
-            }
-        );
-    }
-
-    void uploadFile(std::filesystem::path const& path) {
-        std::ifstream file(path, std::ios::binary);
-        if (!file) {
-            FLAlertLayer::create("Error", "Could not read the selected file.", "OK")->show();
-            return;
-        }
-        std::vector<uint8_t> bytes(
-            (std::istreambuf_iterator<char>(file)),
-            std::istreambuf_iterator<char>()
-        );
-
-        // build multipart/form-data body
-        std::string boundary = "----ChairscareUpload7f3a9b";
-        std::string filename = path.filename().string();
-        std::string ext = path.extension().string();
-        std::string mimeType = "image/png";
-        if (ext == ".jpg" || ext == ".jpeg") mimeType = "image/jpeg";
-        else if (ext == ".webp") mimeType = "image/webp";
-        else if (ext == ".bmp")  mimeType = "image/bmp";
-
-        std::string header =
-            "--" + boundary + "\r\n"
-            "Content-Disposition: form-data; name=\"chair\"; filename=\"" + filename + "\"\r\n"
-            "Content-Type: " + mimeType + "\r\n\r\n";
-        std::string footer = "\r\n--" + boundary + "--\r\n";
-
-        std::vector<uint8_t> body;
-        body.insert(body.end(), header.begin(), header.end());
-        body.insert(body.end(), bytes.begin(), bytes.end());
-        body.insert(body.end(), footer.begin(), footer.end());
-
-        auto req = web::WebRequest();
-        req.header("Content-Type", "multipart/form-data; boundary=" + boundary);
-        req.body(body);
-
-        m_uploadTask.spawn(
-            req.post("https://chairss.rf.gd/save.php"),
-            [](web::WebResponse res) {
-                if (!res.ok()) {
-                    auto body = res.string().unwrapOr("");
-                    if (body.find("max_chairs") != std::string::npos) {
-                        FLAlertLayer::create("Slow down!", "Max 3 chairs a day! Come back tomorrow :)", "OK")->show();
-                    } else {
-                        FLAlertLayer::create("Upload Failed", "Something went wrong. Try again later!", "OK")->show();
-                    }
-                    return;
-                }
-                FLAlertLayer::create("Thank you!", "Your chair has been submitted!\nIt might appear in a future update :D", "OK")->show();
-            }
-        );
+        web::openLinkInBrowser("https://forms.gle/zGDzNXyUjFeAKnwTA");
     }
 
     void onCommit() override {}
