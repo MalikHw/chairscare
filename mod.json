@@ -17,11 +17,22 @@
         "community": "https://discord.gg/G9bZ92eg2n"
     },
     "settings": {
-        "trigger-on-click": {
-            "name": "Trigger Mode: On Click",
-            "description": "ON = scare triggers on jump clicks (with a chance roll).\nOFF = scare triggers at random time intervals.",
+        "enabled": {
+            "name": "Enabled",
+            "description": "Turn the mod on or off.",
             "type": "bool",
             "default": true
+        },
+        "trigger-mode": {
+            "name": "Trigger Mode",
+            "description": "How the scare is triggered.",
+            "type": "string",
+            "default": "click based",
+            "one-of": ["click based", "time based"]
+        },
+        "title": {
+            "name": "Click based",
+            "type": "title"
         },
         "click-chance": {
             "name": "Click Chance (%)",
@@ -31,7 +42,7 @@
             "min": 0,
             "max": 100
         },
-        "title" {
+        "title": {
             "name": "Time based",
             "type": "title"
         },
