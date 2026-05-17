@@ -65,7 +65,8 @@ class $modify(ChairscarePlayer, PlayerObject) {
         bool ret = PlayerObject::pushButton(p0);
         if (p0 != PlayerButton::Jump) return ret;
         m_fields->m_holding = true;
-        if (!Mod::get()->getSettingValue<bool>("trigger-on-click")) return ret;
+        if (!Mod::get()->getSettingValue<bool>("enabled")) return ret;
+        if (Mod::get()->getSettingValue<std::string>("trigger-mode") != "click based") return ret;
         if (!GameManager::sharedState()->getPlayLayer()) return ret;
         if (rollChance(Mod::get()->getSettingValue<double>("click-chance")))
             triggerScare();
@@ -95,7 +96,8 @@ class $modify(ChairscarePlayLayer, PlayLayer) {
         return true;
     }
     void scareTick(float dt) {
-        if (Mod::get()->getSettingValue<bool>("trigger-on-click")) return;
+        if (!Mod::get()->getSettingValue<bool>("enabled")) return;
+        if (Mod::get()->getSettingValue<std::string>("trigger-mode") != "time based") return;
         m_fields->m_elapsed += dt;
         if (m_fields->m_elapsed < m_fields->m_nextInterval) return;
         m_fields->m_elapsed = 0.f;
