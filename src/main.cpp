@@ -34,8 +34,9 @@ static void triggerScare() {
     if (!s_scareSprite) return;
     s_scareSprite->setID("chairscare-sprite");
     CCSize winSize = CCDirector::get()->getWinSize();
-    float scale = winSize.height / s_scareSprite->getContentSize().height;
-    s_scareSprite->setScale(scale);
+    CCSize sprSize = s_scareSprite->getContentSize();
+    s_scareSprite->setScaleX(winSize.width  / sprSize.width);
+    s_scareSprite->setScaleY(winSize.height / sprSize.height);
     s_scareSprite->setPosition({ winSize.width / 2, winSize.height / 2 });
     s_scareSprite->setOpacity(255);
     scene->addChild(s_scareSprite, 100);
