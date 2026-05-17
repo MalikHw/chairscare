@@ -13,6 +13,7 @@ using namespace geode::prelude;
 // chairs zip/ver URLs
 static const char* CHAIRS_ZIP_URL = "https://github.com/MalikHw/chairscare/raw/refs/heads/main/chairs.zip";
 static const char* CHAIRS_VER_URL = "https://github.com/MalikHw/chairscare/raw/refs/heads/main/chairs-ver.txt";
+
 // folder inside save dir where chairs are stored
 static std::filesystem::path getChairsDir() {
     return Mod::get()->getSaveDir() / "chairs";
@@ -20,6 +21,7 @@ static std::filesystem::path getChairsDir() {
 static std::filesystem::path getVerFile() {
     return Mod::get()->getSaveDir() / "chairs-ver.txt";
 }
+
 // scare sprite globals
 static CCSprite* s_scareSprite = nullptr;
 static std::vector<std::string> s_scareImages;
@@ -70,6 +72,7 @@ static bool rollChance(double percent) {
     float roll = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 100.f;
     return roll <= static_cast<float>(percent);
 }
+
 // extract a zip archive to a directory using Geode's file utils
 static Result<> extractZipTo(std::vector<uint8_t> const& data, std::filesystem::path const& dir) {
     // write zip to a temp file first, then use file::Unzip
@@ -82,6 +85,7 @@ static Result<> extractZipTo(std::vector<uint8_t> const& data, std::filesystem::
     std::filesystem::remove(tmpZip);
     return Ok();
 }
+
 // download chairs.zip, extract to save dir, reload image list
 static void downloadAndInstallChairs(std::function<void(bool)> callback) {
     auto req = web::WebRequest();
@@ -98,6 +102,7 @@ static void downloadAndInstallChairs(std::function<void(bool)> callback) {
             if (std::filesystem::exists(dir))
                 std::filesystem::remove_all(dir);
             std::filesystem::create_directories(dir);
+
             auto result = extractZipTo(data, dir);
             if (!result) {
                 FLAlertLayer::create("Extract Failed", result.unwrapErr().c_str(), "OK")->show();
@@ -109,11 +114,13 @@ static void downloadAndInstallChairs(std::function<void(bool)> callback) {
         }
     );
 }
+
 // save local version string to disk
 static void saveLocalVersion(std::string const& ver) {
     std::ofstream f(getVerFile());
     if (f) f << ver;
 }
+
 // read local version string from disk
 static std::string loadLocalVersion() {
     std::ifstream f(getVerFile());
@@ -122,6 +129,7 @@ static std::string loadLocalVersion() {
     std::getline(f, s);
     return s;
 }
+
 // check remote version and show update popup if different
 static void checkForChairUpdate() {
     auto req = web::WebRequest();
@@ -134,12 +142,15 @@ static void checkForChairUpdate() {
             while (!remoteVer.empty() && (remoteVer.back() == '\n' || remoteVer.back() == '\r' || remoteVer.back() == ' '))
                 remoteVer.pop_back();
             if (remoteVer.empty()) return;
+
             auto localVer = loadLocalVersion();
             if (remoteVer == localVer) return;
+
             // different version, ask user
             std::string msg = localVer.empty()
                 ? "Want to download chairs now?\nYou need them for the mod to work!"
                 : "Chair pack update available! Want to update chairs?";
+
             geode::createQuickPopup(
                 "Chairscare",
                 msg,
@@ -156,6 +167,7 @@ static void checkForChairUpdate() {
         }
     );
 }
+
 // custom "Submit Chair" button setting
 class SubmitChairSettingV3 : public SettingV3 {
 public:
@@ -177,11 +189,13 @@ public:
     void reset() override {}
     SettingNodeV3* createNode(float width) override;
 };
+
 class SubmitChairSettingNodeV3 : public SettingNodeV3 {
 protected:
-    ButtonSprite* m_buttonSprite;
-    CCMenuItemSpriteExtra*  m_button;
+    ButtonSprite*                       m_buttonSprite;
+    CCMenuItemSpriteExtra*              m_button;
     async::TaskHolder<web::WebResponse> m_uploadTask;
+
     bool init(std::shared_ptr<SubmitChairSettingV3> setting, float width) {
         if (!SettingNodeV3::init(setting, width)) return false;
         m_buttonSprite = ButtonSprite::create("Submit Chair", "bigFont.fnt", "GJ_button_01.png", .8f);
@@ -196,6 +210,7 @@ protected:
         this->updateState(nullptr);
         return true;
     }
+
     void updateState(CCNode* invoker) override {
         SettingNodeV3::updateState(invoker);
         auto ok = this->getSetting()->shouldEnable();
@@ -205,11 +220,12 @@ protected:
         m_buttonSprite->setOpacity(ok ? 255 : 155);
         m_buttonSprite->setColor(ok ? ccWHITE : ccGRAY);
     }
+
     void onSubmit(CCObject*) {
         async::spawn(
             file::pick(file::PickMode::OpenFile, {
                 "Pick a chair image",
-                std::nullopt,
+                {},
                 { { "Images", { "png", "jpg", "jpeg", "webp", "bmp" } } }
             }),
             [this](Result<std::optional<std::filesystem::path>> result) {
@@ -223,6 +239,7 @@ protected:
             }
         );
     }
+
     void uploadFile(std::filesystem::path const& path) {
         std::ifstream file(path, std::ios::binary);
         if (!file) {
@@ -233,6 +250,7 @@ protected:
             (std::istreambuf_iterator<char>(file)),
             std::istreambuf_iterator<char>()
         );
+
         // build multipart/form-data body
         std::string boundary = "----ChairscareUpload7f3a9b";
         std::string filename = path.filename().string();
@@ -241,18 +259,22 @@ protected:
         if (ext == ".jpg" || ext == ".jpeg") mimeType = "image/jpeg";
         else if (ext == ".webp") mimeType = "image/webp";
         else if (ext == ".bmp")  mimeType = "image/bmp";
+
         std::string header =
             "--" + boundary + "\r\n"
             "Content-Disposition: form-data; name=\"chair\"; filename=\"" + filename + "\"\r\n"
             "Content-Type: " + mimeType + "\r\n\r\n";
         std::string footer = "\r\n--" + boundary + "--\r\n";
+
         std::vector<uint8_t> body;
         body.insert(body.end(), header.begin(), header.end());
         body.insert(body.end(), bytes.begin(), bytes.end());
         body.insert(body.end(), footer.begin(), footer.end());
+
         auto req = web::WebRequest();
         req.header("Content-Type", "multipart/form-data; boundary=" + boundary);
         req.body(body);
+
         m_uploadTask.spawn(
             req.post("https://chairss.rf.gd/save.php"),
             [](web::WebResponse res) {
@@ -269,8 +291,10 @@ protected:
             }
         );
     }
+
     void onCommit() override {}
     void onResetToDefault() override {}
+
 public:
     static SubmitChairSettingNodeV3* create(
         std::shared_ptr<SubmitChairSettingV3> setting, float width
@@ -283,6 +307,7 @@ public:
         delete ret;
         return nullptr;
     }
+
     bool hasUncommittedChanges() const override { return false; }
     bool hasNonDefaultValue() const override { return false; }
 
@@ -290,16 +315,19 @@ public:
         return std::static_pointer_cast<SubmitChairSettingV3>(SettingNodeV3::getSetting());
     }
 };
+
 SettingNodeV3* SubmitChairSettingV3::createNode(float width) {
     return SubmitChairSettingNodeV3::create(
         std::static_pointer_cast<SubmitChairSettingV3>(shared_from_this()),
         width
     );
 }
+
 $on_mod(Loaded) {
     (void)Mod::get()->registerCustomSettingType("submit-chair", &SubmitChairSettingV3::parse);
     checkForChairUpdate(); // check for chair pack updates on every boot
 }
+
 // click mode
 class $modify(ChairscarePlayer, PlayerObject) {
     struct Fields {
