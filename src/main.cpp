@@ -1,17 +1,25 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayerObject.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <filesystem>
 
 using namespace geode::prelude;
 
 static CCSprite* s_scareSprite = nullptr;
-static const std::vector<std::string> SCARE_IMAGES = {
-    "chair1.png"_spr,
-    "chair2.png"_spr,
-    "chair3.png"_spr,
-};
+static std::vector<std::string> s_scareImages;
+static void loadScareImages() {
+    s_scareImages.clear();
+    auto resourcesDir = Mod::get()->getResourcesDir();
+    for (auto& entry : std::filesystem::directory_iterator(resourcesDir)) {
+        if (entry.path().extension() == ".png") {
+            s_scareImages.push_back(entry.path().filename().string());
+        }
+    }
+}
 static std::string getRandomImage() {
-    return SCARE_IMAGES[rand() % SCARE_IMAGES.size()];
+    if (s_scareImages.empty()) loadScareImages();
+    auto name = s_scareImages[rand() % s_scareImages.size()];
+    return Mod::get()->expandSpriteName(name.c_str()).c_str();
 }
 static void triggerScare() {
     auto scene = CCDirector::get()->getRunningScene();
