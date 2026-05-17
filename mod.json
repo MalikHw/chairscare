@@ -16,6 +16,14 @@
         "source": "https://github.com/MalikHw/chairscare",
         "community": "https://discord.gg/G9bZ92eg2n"
     },
+    "resources": {
+        "sprites": [
+            "resources/*.png"
+        ],
+        "files": [
+            "resources/scare.mp3"
+        ]
+    },
     "settings": {
         "enabled": {
             "name": "Enabled",
