@@ -7,14 +7,49 @@
         "ios": "2.2081"
     },
     "version": "1.0.0",
-    "id": "MalikHw.chairscare",
-    "name": "chairscare",
-    "developer": "MalikHw",
-    "description": "desc.",
-    "tags": ["yes", "yeah"],
+    "id": "malikhw47.chairscare",
+    "name": "Chairscare",
+    "developer": "MalikHw47",
+    "description": "chair jumpscare mid gameplay.",
+    "tags": ["joke", "gameplay"],
     "links": {
         "source": "https://github.com/MalikHw/chairscare",
         "community": "https://discord.gg/G9bZ92eg2n"
     },
-    "settings": {}
+    "settings": {
+        "trigger-on-click": {
+            "name": "Trigger Mode: On Click",
+            "description": "ON = scare triggers on jump clicks (with a chance roll).\nOFF = scare triggers at random time intervals.",
+            "type": "bool",
+            "default": true
+        },
+        "click-chance": {
+            "name": "Click Chance (%)",
+            "description": "Percentage chance the scare fires on each jump press. Only used in click mode.",
+            "type": "float",
+            "default": 25,
+            "min": 0,
+            "max": 100
+        },
+        "title" {
+            "name": "Time based",
+            "type": "title"
+        },
+        "interval-min": {
+            "name": "Random Interval: Minimum (secs)",
+            "description": "Shortest possible time between scares. Only used in timer mode.",
+            "type": "float",
+            "default": 5,
+            "min": 1,
+            "max": 600
+        },
+        "interval-max": {
+            "name": "Random Interval: Maximum (secs)",
+            "description": "Longest possible time between scares. Only used in timer mode.",
+            "type": "float",
+            "default": 30,
+            "min": 1,
+            "max": 600
+        }
+    }
 }
