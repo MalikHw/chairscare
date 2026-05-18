@@ -1,44 +1,18 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayerObject.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/utils/web.hpp>
-#include <Geode/utils/file.hpp>
-#include <Geode/utils/async.hpp>
 #include <Geode/loader/SettingV3.hpp>
-#include <filesystem>
-#include <fstream>
 
 using namespace geode::prelude;
 
-// chairs zip/ver URLs
-static const char* CHAIRS_ZIP_URL = "https://github.com/MalikHw/chairscare/raw/refs/heads/main/chairs.zip";
-static const char* CHAIRS_VER_URL = "https://github.com/MalikHw/chairscare/raw/refs/heads/main/chairs-ver.txt";
-
-// folder inside save dir where chairs are stored
-static std::filesystem::path getChairsDir() {
-    return Mod::get()->getSaveDir() / "chairs";
-}
-static std::filesystem::path getVerFile() {
-    return Mod::get()->getSaveDir() / "chairs-ver.txt";
-}
-
 // scare sprite globals
 static CCSprite* s_scareSprite = nullptr;
-static std::vector<std::string> s_scareImages;
+static std::vector<std::string> s_scareImages = {
+    "chair1.png"_spr,
+    "chair2.png"_spr
+};
 
-static void loadScareImages() {
-    s_scareImages.clear();
-    auto dir = getChairsDir();
-    if (!std::filesystem::exists(dir)) return;
-    for (auto& entry : std::filesystem::directory_iterator(dir)) {
-        auto ext = entry.path().extension().string();
-        if (ext == ".png")
-            s_scareImages.push_back(entry.path().string());
-    }
-}
 static std::string getRandomImage() {
-    if (s_scareImages.empty()) loadScareImages();
-    if (s_scareImages.empty()) return "";
     return s_scareImages[rand() % s_scareImages.size()];
 }
 static void triggerScare() {
@@ -50,7 +24,6 @@ static void triggerScare() {
         s_scareSprite = nullptr;
     }
     auto img = getRandomImage();
-    if (img.empty()) return;
     s_scareSprite = CCSprite::create(img.c_str());
     if (!s_scareSprite) return;
     s_scareSprite->setID("chairscare-sprite");
@@ -71,101 +44,6 @@ static void triggerScare() {
 static bool rollChance(double percent) {
     float roll = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 100.f;
     return roll <= static_cast<float>(percent);
-}
-
-// extract a zip archive to a directory using Geode's file utils
-static Result<> extractZipTo(std::vector<uint8_t> const& data, std::filesystem::path const& dir) {
-    // write zip to a temp file first, then use file::Unzip
-    auto tmpZip = Mod::get()->getSaveDir() / "chairs_tmp.zip";
-    std::ofstream out(tmpZip, std::ios::binary);
-    if (!out) return Err("Failed to write temp zip");
-    out.write(reinterpret_cast<const char*>(data.data()), data.size());
-    out.close();
-    GEODE_UNWRAP(file::Unzip::intoDir(tmpZip, dir));
-    std::filesystem::remove(tmpZip);
-    return Ok();
-}
-
-// download chairs.zip, extract to save dir, reload image list
-static void downloadAndInstallChairs(std::function<void(bool)> callback) {
-    auto req = web::WebRequest();
-    async::spawn(
-        req.get(CHAIRS_ZIP_URL),
-        [callback](web::WebResponse res) {
-            if (!res.ok()) {
-                FLAlertLayer::create("Download Failed", "Could not download chairs. Check your connection!", "OK")->show();
-                if (callback) callback(false);
-                return;
-            }
-            auto data = res.data();
-            auto dir  = getChairsDir();
-            if (std::filesystem::exists(dir))
-                std::filesystem::remove_all(dir);
-            std::filesystem::create_directories(dir);
-
-            auto result = extractZipTo(data, dir);
-            if (!result) {
-                FLAlertLayer::create("Extract Failed", result.unwrapErr().c_str(), "OK")->show();
-                if (callback) callback(false);
-                return;
-            }
-            s_scareImages.clear(); // force reload next trigger
-            if (callback) callback(true);
-        }
-    );
-}
-
-// save local version string to disk
-static void saveLocalVersion(std::string const& ver) {
-    std::ofstream f(getVerFile());
-    if (f) f << ver;
-}
-
-// read local version string from disk
-static std::string loadLocalVersion() {
-    std::ifstream f(getVerFile());
-    if (!f) return "";
-    std::string s;
-    std::getline(f, s);
-    return s;
-}
-
-// check remote version and show update popup if different
-static void checkForChairUpdate() {
-    auto req = web::WebRequest();
-    async::spawn(
-        req.get(CHAIRS_VER_URL),
-        [](web::WebResponse res) {
-            if (!res.ok()) return;
-            auto remoteVer = res.string().unwrapOr("");
-            // trim whitespace
-            while (!remoteVer.empty() && (remoteVer.back() == '\n' || remoteVer.back() == '\r' || remoteVer.back() == ' '))
-                remoteVer.pop_back();
-            if (remoteVer.empty()) return;
-
-            auto localVer = loadLocalVersion();
-            if (remoteVer == localVer) return;
-
-            // different version, ask user
-            std::string msg = localVer.empty()
-                ? "Want to download chairs now?\nYou need them for the mod to work!"
-                : "Chair pack update available! Want to update chairs?";
-
-            geode::createQuickPopup(
-                "Chairscare",
-                msg,
-                "Nah", "Yeah!",
-                [remoteVer](auto, bool yes) {
-                    if (!yes) return;
-                    downloadAndInstallChairs([remoteVer](bool ok) {
-                        if (!ok) return;
-                        saveLocalVersion(remoteVer);
-                        FLAlertLayer::create("Done!", "Chairs downloaded successfully!", "OK")->show();
-                    });
-                }
-            );
-        }
-    );
 }
 
 // custom "Submit Chair" button setting, just opens a google form
@@ -257,7 +135,6 @@ SettingNodeV3* SubmitChairSettingV3::createNode(float width) {
 
 $on_mod(Loaded) {
     (void)Mod::get()->registerCustomSettingType("submit-chair", &SubmitChairSettingV3::parse);
-    checkForChairUpdate(); // check for chair pack updates on every boot
 }
 
 // click mode
