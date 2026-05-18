@@ -1,7 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayerObject.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/loader/SettingV3.hpp>
 
 using namespace geode::prelude;
 
@@ -44,97 +43,6 @@ static void triggerScare() {
 static bool rollChance(double percent) {
     float roll = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 100.f;
     return roll <= static_cast<float>(percent);
-}
-
-// custom "Submit Chair" button setting, just opens a google form
-class SubmitChairSettingV3 : public SettingV3 {
-public:
-    static Result<std::shared_ptr<SettingV3>> parse(
-        std::string const& key,
-        std::string const& modID,
-        matjson::Value const& json
-    ) {
-        auto res  = std::make_shared<SubmitChairSettingV3>();
-        auto root = checkJson(json, "SubmitChairSettingV3");
-        res->init(key, modID, root);
-        res->parseNameAndDescription(root);
-        root.checkUnknownKeys();
-        return root.ok(std::static_pointer_cast<SettingV3>(res));
-    }
-    bool load(matjson::Value const&) override { return true; }
-    bool save(matjson::Value&) const override { return true; }
-    bool isDefaultValue() const override { return true; }
-    void reset() override {}
-    SettingNodeV3* createNode(float width) override;
-};
-
-class SubmitChairSettingNodeV3 : public SettingNodeV3 {
-protected:
-    ButtonSprite*          m_buttonSprite;
-    CCMenuItemSpriteExtra* m_button;
-
-    bool init(std::shared_ptr<SubmitChairSettingV3> setting, float width) {
-        if (!SettingNodeV3::init(setting, width)) return false;
-        m_buttonSprite = ButtonSprite::create("Submit Chair", "bigFont.fnt", "GJ_button_01.png", .8f);
-        m_buttonSprite->setScale(.5f);
-        m_button = CCMenuItemSpriteExtra::create(
-            m_buttonSprite, this,
-            menu_selector(SubmitChairSettingNodeV3::onSubmit)
-        );
-        this->getButtonMenu()->addChildAtPosition(m_button, Anchor::Center);
-        this->getButtonMenu()->setContentWidth(100);
-        this->getButtonMenu()->updateLayout();
-        this->updateState(nullptr);
-        return true;
-    }
-
-    void updateState(CCNode* invoker) override {
-        SettingNodeV3::updateState(invoker);
-        auto ok = this->getSetting()->shouldEnable();
-        m_button->setEnabled(ok);
-        m_buttonSprite->setCascadeColorEnabled(true);
-        m_buttonSprite->setCascadeOpacityEnabled(true);
-        m_buttonSprite->setOpacity(ok ? 255 : 155);
-        m_buttonSprite->setColor(ok ? ccWHITE : ccGRAY);
-    }
-
-    void onSubmit(CCObject*) {
-        web::openLinkInBrowser("https://forms.gle/zGDzNXyUjFeAKnwTA");
-    }
-
-    void onCommit() override {}
-    void onResetToDefault() override {}
-
-public:
-    static SubmitChairSettingNodeV3* create(
-        std::shared_ptr<SubmitChairSettingV3> setting, float width
-    ) {
-        auto ret = new SubmitChairSettingNodeV3();
-        if (ret->init(setting, width)) {
-            ret->autorelease();
-            return ret;
-        }
-        delete ret;
-        return nullptr;
-    }
-
-    bool hasUncommittedChanges() const override { return false; }
-    bool hasNonDefaultValue() const override { return false; }
-
-    std::shared_ptr<SubmitChairSettingV3> getSetting() const {
-        return std::static_pointer_cast<SubmitChairSettingV3>(SettingNodeV3::getSetting());
-    }
-};
-
-SettingNodeV3* SubmitChairSettingV3::createNode(float width) {
-    return SubmitChairSettingNodeV3::create(
-        std::static_pointer_cast<SubmitChairSettingV3>(shared_from_this()),
-        width
-    );
-}
-
-$on_mod(Loaded) {
-    (void)Mod::get()->registerCustomSettingType("submit-chair", &SubmitChairSettingV3::parse);
 }
 
 // click mode
