@@ -18,7 +18,9 @@
     },
     "resources": {
         "files": [
-            "resources/scare.mp3"
+            "resources/scare.mp3",
+            "resources/chair1.png",
+            "resources/chair2.png"
         ]
     },
     "settings": {
@@ -66,15 +68,6 @@
             "default": 30,
             "min": 1,
             "max": 600
-        },
-        "submit-title": {
-            "type": "title",
-            "name": "Community"
-        },
-        "submit-chair": {
-            "type": "custom:submit-chair",
-            "name": "Submit Chair",
-            "description": "Got a chair pic? Submit it here and it might appear in a future update!"
         }
     }
 }
