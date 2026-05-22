@@ -33,7 +33,7 @@ static void triggerScare() {
     FMODAudioEngine::sharedEngine()->playEffect("scare.mp3"_spr);
     s_scareSprite->runAction(CCSequence::create(
         CCFadeOut::create(1.0f),
-        CCCallFunc::create(s_scareSprite, callfunc_selector(CCSprite::removeFromParent)),
+        CCRemoveSelf::create(),
         nullptr
     ));
 }
