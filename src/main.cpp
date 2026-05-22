@@ -15,11 +15,8 @@ static std::string getRandomImage() {
     return s_scareImages[rand() % s_scareImages.size()];
 }
 static void triggerScare() {
-    auto scene = CCDirector::get()->getRunningScene();
-    if (!scene) return;
     if (s_scareSprite) {
-        s_scareSprite->stopAllActions();
-        s_scareSprite->removeFromParent();
+        s_scareSprite->removeFromParentAndCleanup(true);
         s_scareSprite = nullptr;
     }
     auto img = getRandomImage();
@@ -32,11 +29,11 @@ static void triggerScare() {
     s_scareSprite->setScaleY(winSize.height / sprSize.height);
     s_scareSprite->setPosition({ winSize.width / 2, winSize.height / 2 });
     s_scareSprite->setOpacity(255);
-    scene->addChild(s_scareSprite, 100);
+    geode::OverlayManager::get()->addChild(s_scareSprite);
     FMODAudioEngine::sharedEngine()->playEffect("scare.mp3"_spr);
     s_scareSprite->runAction(CCSequence::create(
         CCFadeOut::create(1.0f),
-        CCRemoveSelf::create(true),
+        CCCallFunc::create(s_scareSprite, callfunc_selector(CCSprite::removeFromParent)),
         nullptr
     ));
 }
